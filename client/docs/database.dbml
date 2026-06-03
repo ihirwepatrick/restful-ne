@@ -1,0 +1,207 @@
+// Use DBML to define your database structure
+// Docs: https://dbml.dbdiagram.io/docs
+// TZW Fire Safety — four PostgreSQL databases (IDs cross-reference at app level)
+
+// --- fire_auth ---
+
+Table users {
+  id varchar [primary key]
+  first_name varchar [not null]
+  last_name varchar [not null]
+  email varchar [unique, not null]
+  password_hash varchar [not null]
+  role varchar [not null]
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+}
+
+Table refresh_tokens {
+  id varchar [primary key]
+  user_id varchar [not null]
+  token_hash varchar [not null]
+  expires_at timestamp [not null]
+  created_at timestamp [not null]
+}
+
+Table password_reset_otps {
+  id varchar [primary key]
+  user_id varchar [not null]
+  code_hash varchar [not null]
+  expires_at timestamp [not null]
+  used_at timestamp
+  created_at timestamp [not null]
+}
+
+Table pending_registrations {
+  id varchar [primary key]
+  first_name varchar [not null]
+  last_name varchar [not null]
+  email varchar [unique, not null]
+  password_hash varchar [not null]
+  requested_role varchar [not null]
+  code_hash varchar [not null]
+  expires_at timestamp [not null]
+  used_at timestamp
+  created_at timestamp [not null]
+}
+
+Ref: users.id < refresh_tokens.user_id
+
+Ref: users.id < password_reset_otps.user_id
+
+Records users(id, first_name, last_name, email, role) {
+  'seed-user-admin', 'Admin', 'TZW', 'admin@tzw.com', 'ADMIN'
+  'seed-user-inspector', 'Patrick', 'Inspector', 'inspector@tzw.com', 'INSPECTOR'
+  'seed-user-facility', 'Test', 'User', 'user@tzw.com', 'USER'
+}
+
+// --- fire_equipment ---
+
+Table extinguisher_types {
+  id integer [primary key]
+  name varchar [unique, not null]
+}
+
+Table extinguisher_sizes {
+  id integer [primary key]
+  label varchar [unique, not null]
+}
+
+Table extinguisher_statuses {
+  id integer [primary key]
+  name varchar [unique, not null]
+}
+
+Table extinguishers {
+  id varchar [primary key]
+  serial_number varchar [unique, not null]
+  location varchar [not null]
+  type_id integer [not null]
+  size_id integer [not null]
+  status_id integer [not null]
+  installation_date timestamp [not null]
+  expiry_date timestamp [not null]
+  created_by_id varchar
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+}
+
+Ref: extinguisher_types.id < extinguishers.type_id
+
+Ref: extinguisher_sizes.id < extinguishers.size_id
+
+Ref: extinguisher_statuses.id < extinguishers.status_id
+
+Records extinguisher_types(id, name) {
+  1, 'Water'
+  2, 'CO2'
+  3, 'Foam'
+  4, 'DryChemical'
+}
+
+Records extinguisher_sizes(id, label) {
+  1, '2.5 lbs'
+  2, '5 lbs'
+  3, '9 lbs'
+  4, '12 lbs'
+}
+
+Records extinguisher_statuses(id, name) {
+  1, 'Active'
+  2, 'NeedsInspection'
+  3, 'UnderMaintenance'
+  4, 'Expired'
+  5, 'Decommissioned'
+}
+
+Records extinguishers(id, serial_number, location, type_id, size_id, status_id, created_by_id) {
+  'seed-ext-001', 'FE-SEED-001', 'Building A - Reception', 1, 2, 1, 'seed-user-admin'
+  'seed-ext-002', 'FE-SEED-002', 'Warehouse - Bay 3', 2, 3, 2, 'seed-user-inspector'
+  'seed-ext-003', 'FE-SEED-003', 'Office Block - Floor 2', 4, 2, 4, 'seed-user-admin'
+}
+
+// --- fire_operations ---
+
+Table inspections {
+  id varchar [primary key]
+  extinguisher_id varchar [not null]
+  scheduled_at timestamp [not null]
+  completed_at timestamp
+  scheduled_by_id varchar [not null]
+  assigned_inspector_id varchar [not null]
+  status varchar [not null]
+  result varchar [not null]
+  notes text
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+}
+
+Table maintenance_logs {
+  id varchar [primary key]
+  extinguisher_id varchar [not null]
+  performed_at timestamp [not null]
+  performed_by_id varchar [not null]
+  action_taken varchar [not null]
+  conditions_noted varchar [not null]
+  description text
+  parts_replaced text
+  created_at timestamp [not null]
+}
+
+Table notifications {
+  id varchar [primary key]
+  inspection_id varchar
+  recipient_email varchar [not null]
+  recipient_user_id varchar
+  type varchar [not null]
+  sent_at timestamp [not null]
+  status varchar [not null]
+  error_message text
+}
+
+Ref: inspections.id < notifications.inspection_id
+
+Records inspections(id, extinguisher_id, scheduled_by_id, assigned_inspector_id, status, result) {
+  'seed-insp-scheduled', 'seed-ext-002', 'seed-user-admin', 'seed-user-inspector', 'Scheduled', 'Pending'
+  'seed-insp-completed', 'seed-ext-001', 'seed-user-admin', 'seed-user-inspector', 'Completed', 'Pass'
+}
+
+Records maintenance_logs(id, extinguisher_id, performed_by_id, action_taken, conditions_noted) {
+  'seed-maint-001', 'seed-ext-001', 'seed-user-inspector', 'Refill', 'Pressure gauge in green zone after refill.'
+  'seed-maint-002', 'seed-ext-002', 'seed-user-inspector', 'Repair', 'Hose coupling tightened; tag replaced.'
+}
+
+// --- fire_reporting ---
+
+Table compliance_records {
+  id varchar [primary key]
+  extinguisher_id varchar [not null]
+  requirement varchar [not null]
+  due_date timestamp [not null]
+  completed_at timestamp
+  status varchar [not null]
+  evidence_notes text
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+}
+
+Table stock_snapshots {
+  id varchar [primary key]
+  snapshot_date date [unique, not null]
+  total_in_stock integer [not null]
+  active_count integer [not null]
+  expired_count integer [not null]
+  needs_inspection_count integer [not null]
+  under_maintenance_count integer [not null]
+  created_at timestamp [not null]
+}
+
+Records compliance_records(id, extinguisher_id, requirement, status) {
+  'seed-comp-pending', 'seed-ext-001', 'Annual visual inspection certificate', 'Pending'
+  'seed-comp-overdue', 'seed-ext-003', 'Hydrostatic test', 'Overdue'
+  'seed-comp-compliant', 'seed-ext-002', 'Monthly pressure check log', 'Compliant'
+}
+
+Records stock_snapshots(snapshot_date, total_in_stock, active_count, expired_count, needs_inspection_count, under_maintenance_count) {
+  '2026-06-03', 2, 1, 1, 1, 0
+}

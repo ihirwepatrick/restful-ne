@@ -1,0 +1,82 @@
+import type { IconSvgElement } from '@hugeicons/react';
+import {
+  DashboardSquare01Icon,
+  FireExtinguisherIcon,
+  Task01Icon,
+  CalendarAdd01Icon,
+  Wrench01Icon,
+  Shield01Icon,
+  Analytics01Icon,
+  UserIcon,
+  UserMultipleIcon,
+  Logout01Icon,
+  FireSecurityIcon,
+  Add01Icon,
+  Edit01Icon,
+  ViewIcon,
+  Refresh01Icon,
+  Login01Icon,
+  Mail01Icon,
+  LockIcon,
+  Alert01Icon,
+  CheckmarkCircle01Icon,
+  Chart01Icon,
+  Sun01Icon,
+  Moon01Icon,
+  Cancel01Icon,
+  ArrowDown01Icon,
+  Cancel02Icon,
+  BellIcon,
+} from '@hugeicons/core-free-icons';
+
+export const NavIcons = {
+  dashboard: DashboardSquare01Icon,
+  extinguishers: FireExtinguisherIcon,
+  inspections: Task01Icon,
+  schedule: CalendarAdd01Icon,
+  maintenance: Wrench01Icon,
+  maintenanceLog: Add01Icon,
+  compliance: Shield01Icon,
+  reports: Analytics01Icon,
+  profile: UserIcon,
+  users: UserMultipleIcon,
+  logout: Logout01Icon,
+  brand: FireSecurityIcon,
+  add: Add01Icon,
+  edit: Edit01Icon,
+  view: ViewIcon,
+  refresh: Refresh01Icon,
+  login: Login01Icon,
+  mail: Mail01Icon,
+  lock: LockIcon,
+  alert: Alert01Icon,
+  bell: BellIcon,
+  notifications: BellIcon,
+  success: CheckmarkCircle01Icon,
+  chart: Chart01Icon,
+  sun: Sun01Icon,
+  moon: Moon01Icon,
+  delete: Cancel01Icon,
+  chevronDown: ArrowDown01Icon,
+  close: Cancel02Icon,
+} as const satisfies Record<string, IconSvgElement>;
+
+export type NavIconKey = keyof typeof NavIcons;
+
+const hrefToIcon: Record<string, NavIconKey> = {
+  '/dashboard': 'dashboard',
+  '/extinguishers': 'extinguishers',
+  '/inspections': 'inspections',
+  '/inspections/schedule': 'schedule',
+  '/maintenance': 'maintenance',
+  '/maintenance/log': 'maintenanceLog',
+  '/compliance': 'compliance',
+  '/reports': 'reports',
+  '/profile': 'profile',
+  '/admin/users': 'users',
+  '/notifications': 'bell',
+};
+
+export function getNavIcon(href: string): IconSvgElement {
+  return NavIcons[hrefToIcon[href] ?? 'dashboard'];
+}

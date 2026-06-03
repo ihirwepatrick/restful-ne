@@ -121,6 +121,7 @@ You can leave Docker running without `down` if you will start again soon — nex
 | I want to… | Command |
 |------------|---------|
 | **Start all** | `npm start` |
+| **Stop everything (ports)** | `npm run stop` then `Ctrl + C` if a terminal is still open |
 | **Stop app + APIs** | `Ctrl + C` in that terminal |
 | **Stop databases** | `docker compose down` |
 | **First-time setup** | `.\scripts\setup.ps1` then `npm run db:seed` |
