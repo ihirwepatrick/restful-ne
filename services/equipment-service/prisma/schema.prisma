@@ -1,0 +1,44 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("EQUIPMENT_DATABASE_URL")
+}
+
+model ExtinguisherType {
+  id            Int            @id
+  name          String         @unique
+  extinguishers Extinguisher[]
+}
+
+model ExtinguisherSize {
+  id            Int            @id
+  label         String         @unique
+  extinguishers Extinguisher[]
+}
+
+model ExtinguisherStatus {
+  id            Int            @id
+  name          String         @unique
+  extinguishers Extinguisher[]
+}
+
+model Extinguisher {
+  id               String             @id @default(cuid())
+  serialNumber     String             @unique
+  location         String
+  typeId           Int
+  sizeId           Int
+  statusId         Int
+  installationDate DateTime
+  expiryDate       DateTime
+  createdById      String?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  type             ExtinguisherType   @relation(fields: [typeId], references: [id])
+  size             ExtinguisherSize   @relation(fields: [sizeId], references: [id])
+  status           ExtinguisherStatus @relation(fields: [statusId], references: [id])
+}

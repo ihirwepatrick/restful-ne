@@ -1,0 +1,82 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("OPERATIONS_DATABASE_URL")
+}
+
+enum InspectionStatus {
+  Scheduled
+  InProgress
+  Completed
+  Cancelled
+}
+
+enum InspectionResult {
+  Pass
+  Fail
+  Pending
+}
+
+enum ActionTaken {
+  Refill
+  Recharge
+  Repair
+  Replace
+  HydroTest
+  InspectionFollowUp
+  Other
+}
+
+enum NotificationType {
+  InspectionScheduled
+  InspectionReminder
+  MaintenanceLogged
+}
+
+enum NotificationStatus {
+  Sent
+  Failed
+}
+
+model Inspection {
+  id                   String           @id @default(cuid())
+  extinguisherId       String
+  scheduledAt          DateTime
+  completedAt          DateTime?
+  scheduledById        String
+  assignedInspectorId  String
+  status               InspectionStatus @default(Scheduled)
+  result               InspectionResult @default(Pending)
+  notes                String?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+  notifications        Notification[]
+}
+
+model MaintenanceLog {
+  id              String      @id @default(cuid())
+  extinguisherId  String
+  performedAt     DateTime
+  performedById   String
+  actionTaken     ActionTaken
+  conditionsNoted String
+  description     String?
+  partsReplaced   String?
+  createdAt       DateTime    @default(now())
+}
+
+model Notification {
+  id              String             @id @default(cuid())
+  inspectionId    String?
+  recipientEmail  String
+  recipientUserId String?
+  type            NotificationType
+  sentAt          DateTime           @default(now())
+  status          NotificationStatus @default(Sent)
+  errorMessage    String?
+  inspection      Inspection?        @relation(fields: [inspectionId], references: [id])
+}

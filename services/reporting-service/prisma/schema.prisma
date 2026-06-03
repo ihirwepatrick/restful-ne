@@ -1,0 +1,40 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("REPORTING_DATABASE_URL")
+}
+
+enum ComplianceStatus {
+  Compliant
+  Overdue
+  Pending
+}
+
+model ComplianceRecord {
+  id             String           @id @default(cuid())
+  extinguisherId String
+  requirement    String
+  dueDate        DateTime
+  completedAt    DateTime?
+  status         ComplianceStatus @default(Pending)
+  evidenceNotes  String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+}
+
+model StockSnapshot {
+  id                    String   @id @default(cuid())
+  snapshotDate          DateTime @db.Date
+  totalInStock          Int
+  activeCount           Int
+  expiredCount          Int
+  needsInspectionCount  Int
+  underMaintenanceCount Int
+  createdAt             DateTime @default(now())
+
+  @@unique([snapshotDate])
+}
