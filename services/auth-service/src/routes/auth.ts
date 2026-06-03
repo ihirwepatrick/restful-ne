@@ -291,6 +291,23 @@ router.get('/users', requireAuth, requireRole('ADMIN'), async (_req, res: Respon
   res.json(users);
 });
 
+router.delete('/users/:id', requireAuth, requireRole('ADMIN'), async (req: AuthRequest, res: Response) => {
+  const { id } = req.params;
+  if (req.user!.userId === id) {
+    return res.status(400).json({
+      error: 'Validation',
+      message: 'You cannot delete your own account',
+      statusCode: 400,
+    });
+  }
+  const existing = await prisma.user.findUnique({ where: { id } });
+  if (!existing) {
+    return res.status(404).json({ error: 'NotFound', message: 'User not found', statusCode: 404 });
+  }
+  await prisma.user.delete({ where: { id } });
+  res.json({ message: 'User deleted' });
+});
+
 router.patch('/users/:id/role', requireAuth, requireRole('ADMIN'), async (req, res: Response) => {
   const { role } = req.body;
   if (!['ADMIN', 'INSPECTOR', 'USER'].includes(role)) {

@@ -1,0 +1,7 @@
+{
+  "name": "@tzw/seed-data",
+  "version": "1.0.0",
+  "private": true,
+  "main": "src/ids.ts",
+  "types": "src/ids.ts"
+}

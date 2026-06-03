@@ -1,4 +1,9 @@
+import path from 'path';
+import dotenv from 'dotenv';
 import { PrismaClient } from '../src/generated/prisma';
+import { SEED } from '@tzw/seed-data/src/ids';
+
+dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
 
 const prisma = new PrismaClient();
 
@@ -32,7 +37,71 @@ async function main() {
   for (const st of statuses) {
     await prisma.extinguisherStatus.upsert({ where: { id: st.id }, update: {}, create: st });
   }
-  console.log('Equipment reference data seeded');
+
+  const now = new Date();
+  const nextYear = new Date(now);
+  nextYear.setFullYear(nextYear.getFullYear() + 1);
+  const lastYear = new Date(now);
+  lastYear.setFullYear(lastYear.getFullYear() - 1);
+
+  const extinguishers = [
+    {
+      id: SEED.extinguishers.alpha,
+      serialNumber: 'FE-SEED-001',
+      location: 'Building A - Reception',
+      typeId: 1,
+      sizeId: 2,
+      statusId: 1,
+      installationDate: lastYear,
+      expiryDate: nextYear,
+      createdById: SEED.users.admin,
+    },
+    {
+      id: SEED.extinguishers.beta,
+      serialNumber: 'FE-SEED-002',
+      location: 'Warehouse - Bay 3',
+      typeId: 2,
+      sizeId: 3,
+      statusId: 2,
+      installationDate: lastYear,
+      expiryDate: nextYear,
+      createdById: SEED.users.inspector,
+    },
+    {
+      id: SEED.extinguishers.gamma,
+      serialNumber: 'FE-SEED-003',
+      location: 'Office Block - Floor 2',
+      typeId: 4,
+      sizeId: 2,
+      statusId: 4,
+      installationDate: new Date('2020-01-01'),
+      expiryDate: new Date('2024-06-01'),
+      createdById: SEED.users.admin,
+    },
+  ];
+
+  for (const e of extinguishers) {
+    await prisma.extinguisher.upsert({
+      where: { id: e.id },
+      create: e,
+      update: {
+        serialNumber: e.serialNumber,
+        location: e.location,
+        typeId: e.typeId,
+        sizeId: e.sizeId,
+        statusId: e.statusId,
+        installationDate: e.installationDate,
+        expiryDate: e.expiryDate,
+      },
+    });
+  }
+
+  console.log('Equipment reference data and sample extinguishers seeded');
 }
 
-main().catch(console.error).finally(() => prisma.$disconnect());
+main()
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  })
+  .finally(() => prisma.$disconnect());

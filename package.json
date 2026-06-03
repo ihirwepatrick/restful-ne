@@ -9,9 +9,11 @@
     "dev:reporting": "npm run dev -w @tzw/reporting-service",
     "dev:client": "npm run dev -w @tzw/client",
     "dev:all": "concurrently -n auth,equipment,operations,reporting,gateway,client -c blue,green,yellow,magenta,cyan,white \"npm run dev:auth\" \"npm run dev:equipment\" \"npm run dev:operations\" \"npm run dev:reporting\" \"npm run dev:gateway\" \"npm run dev:client\"",
+    "start": "powershell -ExecutionPolicy Bypass -File ./scripts/start-all.ps1",
+    "restart:client": "powershell -ExecutionPolicy Bypass -File ./scripts/fix-client-cache.ps1 && npm run dev:client",
     "build:shared": "npm run build -w @tzw/shared",
     "db:migrate": "npm run db:migrate -w @tzw/auth-service && npm run db:migrate -w @tzw/equipment-service && npm run db:migrate -w @tzw/operations-service && npm run db:migrate -w @tzw/reporting-service",
-    "db:seed": "npm run db:seed -w @tzw/equipment-service"
+    "db:seed": "npm run db:seed -w @tzw/auth-service && npm run db:seed -w @tzw/equipment-service && npm run db:seed -w @tzw/operations-service && npm run db:seed -w @tzw/reporting-service"
   },
   "workspaces": [
     "packages/*",

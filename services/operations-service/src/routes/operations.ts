@@ -21,7 +21,7 @@ async function notifyInspectionScheduled(
     <p><strong>Scheduled:</strong> ${dateStr}</p>
     <p><strong>Scheduled by:</strong> ${schedulerName}</p>
     ${inspection.notes ? `<p><strong>Notes:</strong> ${inspection.notes}</p>` : ''}
-    <p><a href="${CLIENT_URL}/inspections/${inspection.id}">View Inspection</a></p>
+    <p><a href="${CLIENT_URL}/inspections?modal=view&id=${inspection.id}">View Inspection</a></p>
   `;
   const subject = `Inspection Scheduled: ${extinguisher.serialNumber}`;
 
@@ -52,6 +52,38 @@ async function notifyInspectionScheduled(
     }
   }
 }
+
+router.get('/notifications/me', requireAuth, async (req: AuthRequest, res: Response) => {
+  const userId = req.user!.userId;
+  const openStatuses = ['Scheduled', 'InProgress'];
+  const items = await prisma.inspection.findMany({
+    where: {
+      assignedInspectorId: userId,
+      status: { in: openStatuses },
+    },
+    orderBy: { scheduledAt: 'asc' },
+  });
+
+  const now = new Date();
+  const notifications = await Promise.all(
+    items.map(async (insp) => {
+      let serialNumber = insp.extinguisherId;
+      const ext = await getExtinguisher(insp.extinguisherId);
+      if (ext) serialNumber = ext.serialNumber;
+      return {
+        inspectionId: insp.id,
+        extinguisherId: insp.extinguisherId,
+        serialNumber,
+        scheduledAt: insp.scheduledAt,
+        status: insp.status,
+        isOverdue: insp.scheduledAt < now,
+        title: `Inspection: ${serialNumber}`,
+      };
+    }),
+  );
+
+  res.json({ items: notifications, count: notifications.length });
+});
 
 router.get('/inspectors', requireAuth, async (_req, res: Response) => {
   const AUTH_URL = process.env.AUTH_SERVICE_URL || 'http://localhost:4001';

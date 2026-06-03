@@ -7,16 +7,23 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import { jwtMiddleware } from './middleware/jwt';
+import { mountSwagger } from './swagger';
 
 const app = express();
 const PORT = process.env.GATEWAY_PORT || 4000;
 const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:3000';
 
-app.use(helmet());
-app.use(cors({ origin: CLIENT_URL, credentials: true }));
+app.use(
+  helmet({
+    contentSecurityPolicy: false,
+  }),
+);
+app.use(cors({ origin: [CLIENT_URL, 'http://localhost:4000'], credentials: true }));
 app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 500 }));
 
 app.get('/health', (_req, res) => res.json({ status: 'ok', service: 'api-gateway' }));
+
+mountSwagger(app);
 
 const proxyOptions = (target: string, prefix: string) => ({
   target,
