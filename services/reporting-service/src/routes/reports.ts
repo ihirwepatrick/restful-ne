@@ -327,8 +327,18 @@ router.patch('/compliance/:id', requireAuth, requireRole('ADMIN', 'INSPECTOR'), 
   res.json(record);
 });
 
+const EXPORT_TYPES = ['stock', 'expired', 'maintenance', 'inspections'] as const;
+
 router.get('/export', requireAuth, requireRole('ADMIN'), async (req, res: Response) => {
   const type = req.query.type as string;
+  if (!type || !EXPORT_TYPES.includes(type as (typeof EXPORT_TYPES)[number])) {
+    return res.status(400).json({
+      error: 'Validation',
+      message: `type is required and must be one of: ${EXPORT_TYPES.join(', ')}`,
+      statusCode: 400,
+    });
+  }
+
   let csv = '';
   if (type === 'stock') {
     const extinguishers = await fetchExtinguishers();

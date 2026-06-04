@@ -3,16 +3,33 @@
 import { useEffect, useState } from 'react';
 import AppLayout from '@/components/AppLayout';
 import PageHeader from '@/components/PageHeader';
+import CustomSelect from '@/components/ui/CustomSelect';
 import { buttonClass } from '@/components/Button';
 import Icon from '@/components/Icon';
 import type { IconSvgElement } from '@hugeicons/react';
 import { NavIcons } from '@/lib/nav-icons';
-import { api } from '@/lib/api';
+import { api, downloadFile } from '@/lib/api';
+import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/context/ToastContext';
 
 type Period = 'daily' | 'monthly' | 'yearly';
+type ExportType = 'stock' | 'expired' | 'maintenance' | 'inspections';
+
+const EXPORT_OPTIONS: { value: ExportType; label: string }[] = [
+  { value: 'stock', label: 'Stock' },
+  { value: 'expired', label: 'Expired extinguishers' },
+  { value: 'maintenance', label: 'Maintenance' },
+  { value: 'inspections', label: 'Inspections' },
+];
 
 export default function ReportsPage() {
+  const { user } = useAuth();
+  const toast = useToast();
+  const isAdmin = user?.role === 'ADMIN';
+
   const [period, setPeriod] = useState<Period>('daily');
+  const [exportType, setExportType] = useState<ExportType>('stock');
+  const [exporting, setExporting] = useState(false);
   const [stock, setStock] = useState<Record<string, unknown> | null>(null);
   const [inspections, setInspections] = useState<Record<string, unknown> | null>(null);
   const [expired, setExpired] = useState<Record<string, unknown> | null>(null);
@@ -28,24 +45,68 @@ export default function ReportsPage() {
 
   useEffect(() => { load(); }, [period]);
 
+  const handleExportCsv = async () => {
+    setExporting(true);
+    try {
+      await downloadFile(
+        `/api/reports/export?type=${exportType}`,
+        `${exportType}-export.csv`,
+      );
+      toast.success('CSV downloaded');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Export failed');
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <AppLayout>
       <PageHeader
         title="Reports"
-        subtitle="Detailed stock, inspection, and maintenance reports by period"
+        subtitle={
+          isAdmin
+            ? 'Detailed stock, inspection, and maintenance reports by period. Export CSV for Excel (Admin).'
+            : 'Detailed stock, inspection, and maintenance reports by period'
+        }
         icon={NavIcons.reports}
         onRefresh={load}
       />
-      <div className="flex gap-2 mb-6">
-        {(['daily', 'monthly', 'yearly'] as Period[]).map((p) => (
-          <button
-            key={p}
-            onClick={() => setPeriod(p)}
-            className={buttonClass(period === p ? 'filterActive' : 'filter', 'sm', 'rounded-lg capitalize')}
-          >
-            {p}
-          </button>
-        ))}
+      <div className="flex flex-col gap-4 mb-6 sm:flex-row sm:flex-wrap sm:items-center">
+        <div className="flex gap-2">
+          {(['daily', 'monthly', 'yearly'] as Period[]).map((p) => (
+            <button
+              key={p}
+              type="button"
+              onClick={() => setPeriod(p)}
+              className={buttonClass(period === p ? 'filterActive' : 'filter', 'sm', 'rounded-lg capitalize')}
+            >
+              {p}
+            </button>
+          ))}
+        </div>
+        {isAdmin && (
+          <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
+            <div className="w-full min-w-[12rem] sm:w-56">
+              <CustomSelect
+                value={exportType}
+                onChange={(v) => setExportType(v as ExportType)}
+                options={EXPORT_OPTIONS}
+                disabled={exporting}
+                noMargin
+              />
+            </div>
+            <button
+              type="button"
+              onClick={handleExportCsv}
+              disabled={exporting}
+              className={buttonClass('outline', 'md', 'shadow-none')}
+            >
+              <Icon icon={NavIcons.reports} size={16} />
+              {exporting ? 'Exporting…' : 'Export CSV'}
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="grid md:grid-cols-2 gap-6">

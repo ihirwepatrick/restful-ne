@@ -777,7 +777,7 @@ paths:
         - name: type
           in: query
           required: true
-          schema: { type: string, enum: [stock, expired, maintenance] }
+          schema: { type: string, enum: [stock, expired, maintenance, inspections] }
       responses:
         '200':
           description: CSV file

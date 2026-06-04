@@ -2,7 +2,6 @@ node_modules/
 dist/
 **/src/generated/
 .next/
-.env
-.env.local
 *.log
 .DS_Store
+config.bat
